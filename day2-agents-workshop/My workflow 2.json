@@ -1,0 +1,286 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "803cae1f-8e81-45f9-9c71-c7c11c40ad9b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/resume.pdf",
+        "options": {
+          "fileExtension": ".pdf"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        0
+      ],
+      "id": "1c492fe6-ad20-433d-9c47-30471373ffae",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "e2d397d0-2156-4adc-b93c-1c226e626c58",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f46c2740-d0e5-4c7d-9c4d-f938ed29a762",
+              "name": "job_description",
+              "value": "Looking for Node.js developer with Docker and AWS experience",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -64,
+        160
+      ],
+      "id": "3b82fb24-efe8-43fe-8e54-b767dfb0c005",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        208,
+        16
+      ],
+      "id": "53e75fdb-bb9c-4aa2-ad16-6932e8b31bcb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Return ONLY valid JSON. No explanation.\n\nFormat:\n{\n  \"missing_keywords\": [],\n  \"improvements\": []\n}\n\nResume:\n{{ $json[\"text\"] }}\n\nJob Description:\n{{ $json[\"job_description\"] }}",
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        16
+      ],
+      "id": "ac7134dd-6af2-4b5c-a490-3c859ab6ca95",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        448,
+        208
+      ],
+      "id": "497f7b4e-dc8c-43b2-a90e-e11c96830875",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "8J8kB8zyNndBlKWF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  return [JSON.parse($json.output)];\n} catch (error) {\n  return [{\n    error: \"Invalid JSON from AI\",\n    raw: $json.output\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        16
+      ],
+      "id": "f7a54a37-2e94-405a-a9ea-87a0a99b9979",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "adityagangwar516@gmail.com",
+        "subject": "Resume Summary",
+        "message": "={{ $json.missing_keywords }}{{ $json.improvements }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        16
+      ],
+      "id": "0f309d25-7133-4f5f-9469-f0c531ee0cb8",
+      "name": "Send a message",
+      "webhookId": "fe58a3a4-b215-4a62-80d1-43bc63114643",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "o40Tpu3Tsq9CAols",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        208
+      ],
+      "id": "51849ee6-07a6-48a4-a5f2-0d1e282d6db5",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "aa89821d-b7a0-4335-ae5c-dd14e22710b4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad404a1b198c60e366f0551e51f93e41df38f55044f582894eca10110202bdab"
+  },
+  "id": "ojyNoDLHHV5KmQVR",
+  "tags": []
+}
